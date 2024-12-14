@@ -1,81 +1,125 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
-def main():
-    # Load data from the standard MPC run (Task 3.1)
-    data_std = np.load("data1.npy", allow_pickle=True).item()
-    q_mes_all_std = np.array(data_std['q_mes_all'])
-    qd_mes_all_std = np.array(data_std['qd_mes_all'])
-    q_d_all_std = np.array(data_std['q_d_all'])
-    qd_d_all_std = np.array(data_std['qd_d_all'])
-    time_all_std = np.array(data_std['time_all'])
-    print(time_all_std[-1])
+# Load data1 and data2
+print("Loading data1...")
+data1 = np.load("data1.npy", allow_pickle=True).item()
+print("Loading data2...")
+data2 = np.load("data2.npy", allow_pickle=True).item()
 
-    # Load data from the LTV MPC run (Task 3.2)
-    data_ltv = np.load("data2.npy", allow_pickle=True).item()
-    q_mes_all_ltv = np.array(data_ltv['q_mes_all'])
-    qd_mes_all_ltv = np.array(data_ltv['qd_mes_all'])
-    q_d_all_ltv = np.array(data_ltv['q_d_all'])
-    qd_d_all_ltv = np.array(data_ltv['qd_d_all'])
-    time_all_ltv = np.array(data_ltv['time_all'])
+# Extract arrays from data1
+q_mes_all1 = np.array(data1['q_mes_all'])   # shape: T x 7
+qd_mes_all1 = np.array(data1['qd_mes_all']) # shape: T x 7
+u_mpc_all1 = np.array(data1['u_mpc_all'])   # not used for plotting error, but we have it
+q_d_all1 = np.array(data1['q_d_all'])       # shape: T x 7
+qd_d_all1 = np.array(data1['qd_d_all'])     # shape: T x 7
+time_all1 = np.array(data1['time_all'])     # shape: T
 
-    # Compute errors
-    # error_p = q_mes - q_d
-    error_p_std = q_mes_all_std - q_d_all_std
-    error_p_ltv = q_mes_all_ltv - q_d_all_ltv
+# Extract arrays from data2
+q_mes_all2 = np.array(data2['q_mes_all'])
+qd_mes_all2 = np.array(data2['qd_mes_all'])
+u_mpc_all2 = np.array(data2['u_mpc_all'])   # not used for error plotting
+q_d_all2 = np.array(data2['q_d_all'])
+qd_d_all2 = np.array(data2['qd_d_all'])
+time_all2 = np.array(data2['time_all'])
 
-    # error_pd = qd_mes - qd_d
-    error_pd_std = qd_mes_all_std - qd_d_all_std
-    error_pd_ltv = qd_mes_all_ltv - qd_d_all_ltv
+time_all = time_all1  # Using data1 time as reference
+if time_all2.shape != time_all1.shape:
+    print("Warning: time arrays differ in shape, consider aligning them.")
+    # For simplicity, this code assumes they match.
 
-    # For plotting a single representative measure, we take the mean across all joints at each time step
-    mean_error_p_std = np.mean(error_p_std, axis=1)   # shape: (time,)
-    mean_error_p_ltv = np.mean(error_p_ltv, axis=1)
-    mean_error_pd_std = np.mean(error_pd_std, axis=1)
-    mean_error_pd_ltv = np.mean(error_pd_ltv, axis=1)
+# Compute errors
+# error_q for data1: error_q1 = q_d_all1 - q_mes_all1
+error_q1 = q_d_all1 - q_mes_all1
+# error_qd for data1: error_qd1 = qd_d_all1 - qd_mes_all1
+error_qd1 = qd_d_all1 - qd_mes_all1
 
-    # Compute cumulative mean (running average) over time
-    # cumulative mean at time t is mean(error[0:t]) 
-    # Note: We assume time_all_std and time_all_ltv have the same length and sampling.
-    # If not, interpolation or time alignment is needed.
-    def running_mean(data):
-        return np.cumsum(data) / (np.arange(len(data)) + 1)
+# error_q for data2: error_q2 = q_d_all2 - q_mes_all2
+error_q2 = q_d_all2 - q_mes_all2
+# error_qd for data2: error_qd2 = qd_d_all2 - qd_mes_all2
+error_qd2 = qd_d_all2 - qd_mes_all2
 
-    cumm_mean_error_p_std = running_mean(mean_error_p_std)
-    cumm_mean_error_p_ltv = running_mean(mean_error_p_ltv)
-    cumm_mean_error_pd_std = running_mean(mean_error_pd_std)
-    cumm_mean_error_pd_ltv = running_mean(mean_error_pd_ltv)
+def rolling_mean(data, N):
+    """
+    Compute the rolling mean with a window size of N.
+    For the first few time steps where there are fewer than N values,
+    the mean is computed using all available values.
+    
+    Parameters:
+        data (ndarray): Input data array of shape (T, joints)
+        N (int): Window size
+    
+    Returns:
+        ndarray: Rolling mean of shape (T, joints)
+    """
+    T, joints = data.shape
+    rolling_mean_array = np.zeros((T, joints))
+    for t in range(T):
+        start_idx = max(0, t - N + 1)
+        rolling_mean_array[t] = np.mean(data[start_idx:t+1], axis=0)
+    return rolling_mean_array
 
-    # Plot results
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
+# Define the rolling window size
+N = 1000
 
-    # Top subplot: Position error
-    ax1.plot(time_all_std, mean_error_p_std, label='Standard MPC Position Error', color='blue')
-    ax1.plot(time_all_ltv, mean_error_p_ltv, label='LTV MPC Position Error', color='orange', linestyle='--')
-    ax1.plot(time_all_std, cumm_mean_error_p_std, label='Standard MPC Cumulative Mean Pos. Error', color='blue', linewidth=2, alpha=0.7)
-    ax1.plot(time_all_ltv, cumm_mean_error_p_ltv, label='LTV MPC Cumulative Mean Pos. Error', color='orange', linewidth=2, alpha=0.7, linestyle='--')
+# Compute rolling means for each dataset
+error_q_mean1 = rolling_mean(error_q1, N)   # shape: (T, 7)
+error_qd_mean1 = rolling_mean(error_qd1, N) # shape: (T, 7)
 
-    ax1.set_title('Position Tracking Error Comparison', fontsize=14)
-    ax1.set_xlabel('Time [s]', fontsize=12)
-    ax1.set_ylabel('Position Error [rad]', fontsize=12)
-    ax1.grid(True)
-    ax1.legend(fontsize=10)
+error_q_mean2 = rolling_mean(error_q2, N)   # shape: (T, 7)
+error_qd_mean2 = rolling_mean(error_qd2, N) # shape: (T, 7)
+# Create output directory
+output_dir = "Q3P3"
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+    print(f"Created directory {output_dir} for storing figures.")
 
-    # Bottom subplot: Velocity (position derivative) error
-    ax2.plot(time_all_std, mean_error_pd_std, label='Standard MPC Velocity Error', color='green')
-    ax2.plot(time_all_ltv, mean_error_pd_ltv, label='LTV MPC Velocity Error', color='red', linestyle='--')
-    ax2.plot(time_all_std, cumm_mean_error_pd_std, label='Standard MPC Cumulative Mean Vel. Error', color='green', linewidth=2, alpha=0.7)
-    ax2.plot(time_all_ltv, cumm_mean_error_pd_ltv, label='LTV MPC Cumulative Mean Vel. Error', color='red', linewidth=2, alpha=0.7, linestyle='--')
+# Plotting styles
+plt.rcParams['figure.figsize'] = (16, 9)
+colors = {
+    'data1': 'blue',
+    'data2': 'red',
+    'data1_mean': 'cyan',
+    'data2_mean': 'orange'
+}
 
-    ax2.set_title('Velocity Tracking Error Comparison', fontsize=14)
-    ax2.set_xlabel('Time [s]', fontsize=12)
-    ax2.set_ylabel('Velocity Error [rad/s]', fontsize=12)
-    ax2.grid(True)
-    ax2.legend(fontsize=10)
+print("Generating plots...")
 
-    plt.tight_layout()
-    plt.savefig('position_velocity_error_comparison.png')
-    plt.show()
+for i in range(7):
+    joint_name = f"Joint {i+1}"
+    
+    # Plot for q
+    fig_q = plt.figure()
+    plt.plot(time_all, error_q1[:, i], color=colors['data1'], label=f"error_q1 (Gravity Cancelation)")
+    plt.plot(time_all, error_q2[:, i], color=colors['data2'], label=f"error_q2 (LTV)")
+    # Plot mean lines as horizontal lines
+    # Plotting the cumulative mean error
+    plt.plot(time_all, error_q_mean1[:, i], color=colors['data1_mean'], linestyle='--', label=f"mean error_q1 (Gravity Cancelation) of {N} steps")
+    plt.plot(time_all, error_q_mean2[:, i], color=colors['data2_mean'], linestyle='--', label=f"mean error_q2 (LTV) of {N} steps")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Error (rad)")
+    plt.title(f"{joint_name} Position Tracking Error (rad)")
+    plt.legend()
+    filename_q = os.path.join(output_dir, f"error_q_joint_{i+1}.png")
+    plt.savefig(filename_q)
+    plt.close(fig_q)
+    print(f"Saved {filename_q}")
+    
+    # plot for qd
+    fig_qd = plt.figure()
+    plt.plot(time_all, error_qd1[:, i], color=colors['data1'], label=f"error_qd1 (Gravity Cancelation)")
+    plt.plot(time_all, error_qd2[:, i], color=colors['data2'], label=f"error_qd2 (LTV)")
+    # Plot mean lines as horizontal lines
+    plt.plot(time_all, error_qd_mean1[:, i], color=colors['data1_mean'], linestyle='--', label=f"mean error_q1 (Gravity Cancelation) of {N} steps")
+    plt.plot(time_all, error_qd_mean2[:, i], color=colors['data2_mean'], linestyle='--', label=f"mean error_q2 (LTV) of {N} steps")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Error (rad/s)")
+    plt.title(f"{joint_name} Velocity Tracking Error (rad/s)")
+    plt.legend()
+    filename_qd = os.path.join(output_dir, f"error_qd_joint_{i+1}.png")
+    plt.savefig(filename_qd)
+    plt.close(fig_qd)
+    print(f"Saved {filename_qd}")
 
-if __name__ == '__main__':
-    main()
+print(f"All plots have been generated and saved in {output_dir}")
