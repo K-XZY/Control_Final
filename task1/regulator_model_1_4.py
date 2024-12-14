@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.optimize import minimize
-
+    
 class RegulatorModel:
-    def __init__(self, N, q, m, n, constr_flag=False):
+    def __init__(self, N, q, m, n,constr_flag=False):
         self.A = None # state transition matrix
         self.B = None # input matrix
         self.C = None # output matrix
@@ -26,7 +26,7 @@ class RegulatorModel:
         self.constr_flag = constr_flag
 
     def compute_H_and_F(self):
-       # Compute H
+        # Compute H
         self.H = np.dot(self.S_bar.T, np.dot(self.Q_bar, self.S_bar)) + self.R_bar
 
         if self.x_ref_bar is not None:
@@ -36,7 +36,7 @@ class RegulatorModel:
         # Compute F transpose
         self.F = np.dot(self.S_bar.T, np.dot(self.Q_bar, self.T_bar))
 
-    
+
     def propagation_model_regulator_fixed_std(self, x_ref=None):
         S_bar = np.zeros((self.N*self.q, self.N*self.m))
         T_bar = np.zeros((self.N*self.q, self.n))
@@ -91,7 +91,6 @@ class RegulatorModel:
         self.B = B_disc
         # here we assume i have a full state feedback (and if i do not we can use the observer to estimate the states)
         self.C = np.eye(num_outputs)
-
     
     def setCostMatrices(self, Qcoeff, Rcoeff):
         """
@@ -143,7 +142,7 @@ class RegulatorModel:
         # Assign the matrices to the object's attributes
         self.Q = Q
         self.R = R
-    
+
 
     def regulator_G_std(self, S_bar):
         G = np.vstack([S_bar, -S_bar, np.eye(self.N * self.m), -np.eye(self.N * self.m)])
@@ -157,6 +156,7 @@ class RegulatorModel:
             np.zeros((self.N * self.m, self.n))
         ])
         return S
+
     
     # B_In input bound constraints (dict): A dictionary containing the input bound constraints.
     # B_Out output bound constraints (dict): A dictionary containing the output bound constraints.
@@ -289,7 +289,7 @@ class RegulatorModel:
             print("The system is unstable.")
 
     def checkControllabilityDiscrete(self):
-        C = np.hstack([self.B, self.A @ self.B])
+        C = np.hstack([self.B,self.A @ self.B])
         if np.linalg.matrix_rank(C) == 2:
             print("The discrete system is controllable.")
         else:

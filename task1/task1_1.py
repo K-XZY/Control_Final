@@ -11,9 +11,9 @@ K_e = 0.01    # Back EMF constant (V*s/rad)
 R_a = 1.0     # Armature resistance (Ohm)
 L_a = 0.001   # Armature inductance (H)
 
-# Desired Eigenvalues for Observer
-lambda_1 = -500.0
-lambda_2 = -600.0
+# Choose moderate poles to avoid huge L
+lambda_1 = -20
+lambda_2 = -11
 
 # Simulation Parameters
 t_start = 0.0
@@ -33,7 +33,6 @@ observer = Observer(motor_model.A, motor_model.B, motor_model.C,dt, x_hat_init)
 # Compute the observer gain L
 # Place the eigenvalues of (A - L C) at desired locations
 observer.ComputeObserverGains(lambda_1, lambda_2)
-
 
 # Input Voltage (Armature voltage V_a)
 V_a = 12.0  # Volts

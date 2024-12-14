@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from observer import Observer
 from dc_model import SysDyn
-from regulator_model import RegulatorModel
+from regulator_model_1_4 import RegulatorModel # Task 1.4 variant of regulator model with modelling uncertainties
 from scipy.linalg import solve_discrete_are, inv
 from numpy.linalg import matrix_rank
 
@@ -10,7 +10,7 @@ from numpy.linalg import matrix_rank
 # Motor Parameters
 J = 0.01      # Inertia (kg*m^2)
 b = 0.1       # Friction coefficient (N*m*s)
-K_t = 1    # Motor torque constant (N*m/A)
+K_t = 1       # Motor torque constant (N*m/A)
 K_e = 0.01    # Back EMF constant (V*s/rad)
 R_a = 1.0     # Armature resistance (Ohm)
 L_a = 0.001   # Armature inductance (H)
@@ -21,7 +21,7 @@ lambda_2 = -0.8
 
 # Simulation Parameters
 t_start = 0.0
-t_end = 0.04
+t_end = 0.05
 dt = 0.00001  # Smaller time step for Euler integration
 time = np.arange(t_start, t_end, dt)
 num_steps = len(time)
@@ -157,6 +157,7 @@ x_i_all = np.zeros((num_steps, num_states))
 for k in range(num_steps):
     # Time stamp
     t = time[k]
+    print("Time: ", t)
     
     # compute control input using LQR
     V_a = - K @ (x_cur - x_ref) + u_ff
@@ -189,7 +190,7 @@ plt.figure(figsize=(12, 10))
 # Angular velocity
 plt.subplot(5, 1, 1)
 plt.plot(time, omega, label='True $\omega$ (rad/s)')
-plt.plot(time, hat_omega, '--', label='Estimated $\hat{\omega}$ (rad/s)')
+#plt.plot(time, hat_omega, '--', label='Estimated $\hat{\omega}$ (rad/s)')
 plt.title('Angular Velocity')
 plt.xlabel('Time (s)')
 plt.ylabel('Angular Velocity (rad/s)')
@@ -199,7 +200,7 @@ plt.grid(True)
 # Armature current
 plt.subplot(5, 1, 2)
 plt.plot(time, I_a, label='True $I_a$ (A)')
-plt.plot(time, hat_I_a, '--', label='Estimated $\hat{I}_a$ (A)')
+#plt.plot(time, hat_I_a, '--', label='Estimated $\hat{I}_a$ (A)')
 plt.title('Armature Current')
 plt.xlabel('Time (s)')
 plt.ylabel('Current (A)')
@@ -209,7 +210,7 @@ plt.grid(True)
 # Torque
 plt.subplot(5, 1, 3)
 plt.plot(time, T_m_true, label='True $T_m$ (N*m)')
-plt.plot(time, T_m_estimated, '--', label='Estimated $\hat{T}_m$ (N*m)')
+#plt.plot(time, T_m_estimated, '--', label='Estimated $\hat{T}_m$ (N*m)')
 plt.title('Motor Torque')
 plt.xlabel('Time (s)')
 plt.ylabel('Torque (N*m)')
@@ -219,7 +220,7 @@ plt.grid(True)
 # Terminal Voltage
 plt.subplot(5, 1, 4)
 plt.plot(time, V_terminal, label='Measured $V_{terminal}$ (V)')
-plt.plot(time, V_terminal_hat, '--', label='Estimated $\hat{V}_{terminal}$ (V)')
+#plt.plot(time, V_terminal_hat, '--', label='Estimated $\hat{V}_{terminal}$ (V)')
 plt.title('Terminal Voltage')
 plt.xlabel('Time (s)')
 plt.ylabel('Voltage (V)')
@@ -236,7 +237,3 @@ plt.grid(True)
 
 plt.tight_layout()
 plt.show()
-
-
-
-        
