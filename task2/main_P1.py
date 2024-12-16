@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from simulation_and_control import pb, MotorCommands, PinWrapper,dyn_cancel, feedback_lin_ctrl, SinusoidalReference, CartesianDiffKin, differential_drive_controller_adjusting_bearing
 from simulation_and_control import differential_drive_regulation_controller,regulation_polar_coordinates,regulation_polar_coordinate_quat,wrap_angle,velocity_to_wheel_angular_velocity
 import pinocchio as pin
-from regulator_model import RegulatorModel
+from regulator_model_P1 import RegulatorModel
 
 constraints_flag = True
 
