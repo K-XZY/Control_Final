@@ -3,7 +3,7 @@ import time
 import os
 import matplotlib.pyplot as plt
 from simulation_and_control import pb, MotorCommands, PinWrapper, feedback_lin_ctrl, dyn_cancel, SinusoidalReference, CartesianDiffKin
-from tracker_model import TrackerModel
+from tracker_model_P1 import TrackerModel
 
 
 
@@ -32,7 +32,7 @@ def gravity_cancellation(dyn_model,q_,qd_, u):
     # control 
     tau_gravity_cancellation = dyn_model.res.g + u
 
-    tau_FL = dyn_model._FromPinToExtVec(tau_FL)
+    tau_FL = dyn_model._FromPinToExtVec(tau_gravity_cancellation)#(tau_FL)
   
     return tau_FL
 constraints_flag = True
@@ -235,6 +235,19 @@ def main():
 
         plt.tight_layout()
         plt.show()
+    
+    
+    # Store the data to a JSON file
+    data = {
+        'q_mes_all': q_mes_all.tolist(),
+        'qd_mes_all': qd_mes_all.tolist(),
+        'u_mpc_all': u_mpc_all.tolist(),
+        'q_d_all': q_d_all.tolist(),
+        'qd_d_all': qd_d_all.tolist(),
+        'time_all': time_all.tolist()
+    }
+    np.save("data1.npy", data)
+    print(f"Saved data to 'data.npy'.")
     
      
     
