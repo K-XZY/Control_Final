@@ -72,6 +72,10 @@ for k in range(num_steps):
 # Plotting the results
 plt.figure(figsize=(12, 10))
 
+# Add overarching title
+plt.suptitle('Task 1.1: DC Motor Observer Design and State Estimation', fontsize=16, fontweight='bold')
+
+
 # Angular velocity
 plt.subplot(4, 1, 1)
 plt.plot(time, omega, label='True $\omega$ (rad/s)')
